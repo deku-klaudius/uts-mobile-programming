@@ -110,19 +110,6 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Top Bar with Back Button */}
-          <View style={styles.topBar}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.backButtonText}>← Kembali</Text>
-            </TouchableOpacity>
-            <View style={styles.styleBadge}>
-              <Text style={styles.styleBadgeText}>Style 6 - Login</Text>
-            </View>
-          </View>
 
           {/* Illustration Card (Style 6) */}
           <View style={styles.illustrationCard}>
@@ -286,34 +273,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 28,
   },
-  topBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  backButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-  },
-  backButtonText: {
-    fontSize: 14,
-    color: "#2B92E4",
-    fontWeight: "600",
-  },
-  styleBadge: {
-    backgroundColor: "#EFF6FF",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#BFDBFE",
-  },
-  styleBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#1D4ED8",
-  },
+
   illustrationCard: {
     alignItems: "center",
     justifyContent: "center",
