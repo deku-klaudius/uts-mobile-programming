@@ -131,35 +131,12 @@ export default function DashboardScreen() {
     );
   }
 
-  const userInitials = studentName
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Header */}
-        <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.greetingText}>
-              Halo, {studentName}! 👋
-            </Text>
-            <Text style={styles.subGreetingText}>
-              Dashboard Utama • Sata Lesmana, M.Kom.
-            </Text>
-          </View>
-
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>{userInitials || "KO"}</Text>
-          </View>
-        </View>
-
         {/* Status Login Sukses Banner */}
         <View style={styles.statusSuccessBanner}>
           <View style={styles.statusDot} />
@@ -306,40 +283,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 32,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
-  greetingText: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#0F172A",
-  },
-  subGreetingText: {
-    fontSize: 13,
-    color: "#64748B",
-    marginTop: 2,
-  },
-  avatarCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#2B92E4",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#2B92E4",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  avatarText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
   },
   statusSuccessBanner: {
     flexDirection: "row",
