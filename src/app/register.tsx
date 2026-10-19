@@ -53,8 +53,8 @@ export default function RegisterScreen() {
       setErrorMessage("Silahkan buat password akun anda.");
       return;
     }
-    if (password.length < 6) {
-      setErrorMessage("Password minimal harus 6 karakter.");
+    if (password.trim().length < 4) {
+      setErrorMessage("Password minimal 4 karakter (angka atau huruf bebas).");
       return;
     }
     if (password !== confirmPassword) {
@@ -68,7 +68,7 @@ export default function RegisterScreen() {
         fullName: cleanName,
         emailOrUsername: cleanIdentifier,
         phone: cleanPhone,
-        password,
+        password: password.trim(),
       });
 
       // Pendaftaran berhasil, arahkan ke layar Sukses / Verifikasi Style 6
@@ -78,6 +78,7 @@ export default function RegisterScreen() {
           fullName: newUser.fullName,
           username: newUser.username,
           email: newUser.email,
+          registeredPassword: password.trim(),
         },
       });
     } catch (err: any) {
@@ -188,7 +189,7 @@ export default function RegisterScreen() {
             <View style={styles.passwordInputWrapper}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Password (min. 6 karakter)"
+                placeholder="Password (angka atau huruf, min. 4)"
                 placeholderTextColor="#94A3B8"
                 value={password}
                 onChangeText={(t) => {

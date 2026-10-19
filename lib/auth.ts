@@ -91,16 +91,18 @@ export const authService = {
       throw new Error('Email atau username sudah terdaftar! Silakan gunakan yang lain.');
     }
 
+    const cleanPass = password.trim();
+
     const newUser: UserAccount = {
       id: `user_${Date.now()}`,
       username: cleanIdentifier.includes('@') ? cleanIdentifier.split('@')[0] : cleanIdentifier,
-      email: cleanIdentifier.includes('@') ? cleanIdentifier : `${cleanIdentifier}@student.lp3i.ac.id`,
+      email: cleanIdentifier.includes('@') ? cleanIdentifier : `${cleanIdentifier}@gmail.com`,
       fullName: fullName.trim(),
       phone: phone.trim() || '081234567890',
       role: 'Mahasiswa',
       nimOrNidn: '240444020010',
       className: 'Informatika Komputer (IK-24)',
-      password: password,
+      password: cleanPass,
     };
 
     const updatedList = [...users, newUser];
@@ -131,7 +133,7 @@ export const authService = {
     const matched = users.find(
       (u) =>
         (u.username.toLowerCase() === cleanId || u.email.toLowerCase() === cleanId) &&
-        u.password === cleanPass
+        u.password.trim() === cleanPass
     );
 
     if (!matched) {

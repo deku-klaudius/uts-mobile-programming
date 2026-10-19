@@ -34,6 +34,9 @@ export default function DashboardScreen() {
   const [tempNim, setTempNim] = useState("");
   const [tempClass, setTempClass] = useState("");
 
+  // Modal Konfirmasi Logout
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+
   useEffect(() => {
     loadDashboardData();
   }, []);
@@ -48,13 +51,18 @@ export default function DashboardScreen() {
       }
       setUser(activeUser);
 
-      // Load custom profile if previously edited
-      const profileRaw = await AsyncStorage.getItem(STORAGE_PROFILE_KEY);
+      // Load custom profile if previously edited for this specific user
+      const userProfileKey = `@uts_profile_${activeUser.id || activeUser.email}`;
+      const profileRaw = await AsyncStorage.getItem(userProfileKey);
       if (profileRaw) {
         const parsed = JSON.parse(profileRaw);
         if (parsed.name) setStudentName(parsed.name);
         if (parsed.nim) setStudentNim(parsed.nim);
         if (parsed.className) setStudentClass(parsed.className);
+      } else {
+        setStudentName(activeUser.fullName || "Klaudius Oe Naimnou");
+        setStudentNim(activeUser.nimOrNidn || "240444020010");
+        setStudentClass(activeUser.className || "Informatika Komputer (IK-24)");
       }
     } catch (e) {
       console.warn("Dashboard load error:", e);
@@ -63,22 +71,14 @@ export default function DashboardScreen() {
     }
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      "Konfirmasi Keluar",
-      "Apakah anda yakin ingin keluar dari akun?",
-      [
-        { text: "Batal", style: "cancel" },
-        {
-          text: "Keluar",
-          style: "destructive",
-          onPress: async () => {
-            await authService.logout();
-            router.replace("/login");
-          },
-        },
-      ]
-    );
+  const handleLogoutPress = () => {
+    setLogoutModalVisible(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    setLogoutModalVisible(false);
+    await authService.logout();
+    router.replace("/login");
   };
 
   const handleOpenEditProfile = () => {
@@ -101,23 +101,25 @@ export default function DashboardScreen() {
     setStudentName(updatedProfile.name);
     setStudentNim(updatedProfile.nim);
     setStudentClass(updatedProfile.className);
-    await AsyncStorage.setItem(STORAGE_PROFILE_KEY, JSON.stringify(updatedProfile));
+    const userProfileKey = `@uts_profile_${user?.id || user?.email || "default"}`;
+    await AsyncStorage.setItem(userProfileKey, JSON.stringify(updatedProfile));
     setProfileModalVisible(false);
     Alert.alert("Berhasil", "Data identitas mahasiswa berhasil diperbarui!");
   };
 
   const handleResetProfile = async () => {
     const defaultProfile = {
-      name: "Klaudius Oe Naimnou",
-      nim: "240444020010",
-      className: "Informatika Komputer (IK-24)",
+      name: user?.fullName || "Klaudius Oe Naimnou",
+      nim: user?.nimOrNidn || "240444020010",
+      className: user?.className || "Informatika Komputer (IK-24)",
     };
     setStudentName(defaultProfile.name);
     setStudentNim(defaultProfile.nim);
     setStudentClass(defaultProfile.className);
-    await AsyncStorage.removeItem(STORAGE_PROFILE_KEY);
+    const userProfileKey = `@uts_profile_${user?.id || user?.email || "default"}`;
+    await AsyncStorage.removeItem(userProfileKey);
     setProfileModalVisible(false);
-    Alert.alert("Direset", "Identitas dikembalikan ke default data mahasiswa!");
+    Alert.alert("Direset", "Identitas dikembalikan ke data awal!");
   };
 
   if (loading) {
@@ -194,7 +196,7 @@ export default function DashboardScreen() {
         {/* Action Logout */}
         <TouchableOpacity
           style={styles.logoutButton}
-          onPress={handleLogout}
+          onPress={handleLogoutPress}
           activeOpacity={0.85}
         >
           <Text style={styles.logoutButtonText}>Keluar / Logout Akun</Text>
@@ -261,6 +263,47 @@ export default function DashboardScreen() {
                 onPress={handleSaveProfile}
               >
                 <Text style={styles.modalSaveText}>Simpan</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL: KONFIRMASI LOGOUT */}
+      <Modal
+        visible={logoutModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setLogoutModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.logoutModalCard}>
+            <View style={styles.logoutModalIconWrap}>
+              <Text style={styles.logoutModalIcon}>🚪</Text>
+            </View>
+            <Text style={styles.logoutModalTitle}>Konfirmasi Keluar</Text>
+            <Text style={styles.logoutModalDesc}>
+              Apakah Anda yakin ingin keluar dari akun{"\n"}
+              <Text style={{ fontWeight: "700", color: "#0F172A" }}>
+                {user?.email || user?.username || "admin@gmail.com"}
+              </Text>
+              ?
+            </Text>
+
+            <View style={styles.logoutModalActions}>
+              <TouchableOpacity
+                style={styles.logoutCancelBtn}
+                onPress={() => setLogoutModalVisible(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.logoutCancelText}>Batal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.logoutConfirmBtn}
+                onPress={handleConfirmLogout}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.logoutConfirmText}>Ya, Keluar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -461,5 +504,75 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#FFFFFF",
     fontWeight: "700",
+  },
+  logoutModalCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 24,
+    width: "100%",
+    maxWidth: 340,
+    alignItems: "center",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  logoutModalIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#FEE2E2",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  logoutModalIcon: {
+    fontSize: 26,
+  },
+  logoutModalTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0F172A",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  logoutModalDesc: {
+    fontSize: 13,
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 19,
+    marginBottom: 20,
+  },
+  logoutModalActions: {
+    flexDirection: "row",
+    gap: 10,
+    width: "100%",
+  },
+  logoutCancelBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoutCancelText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#64748B",
+  },
+  logoutConfirmBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: "#EF4444",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoutConfirmText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 });

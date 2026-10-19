@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -13,18 +13,37 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { authService } from "../../lib/auth";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const registeredEmail = (params.registeredEmail as string) || (params.identifier as string) || "";
+  const registeredPassword = (params.registeredPassword as string) || "";
+  const justRegistered = params.justRegistered === "1";
 
-  // Langsung terisi fix admin@gmail.com dan test123
-  const [identifier, setIdentifier] = useState("admin@gmail.com");
-  const [password, setPassword] = useState("test123");
+  // Langsung terisi fix admin@gmail.com dan test123 jika default, atau akun yang baru didaftarkan
+  const [identifier, setIdentifier] = useState(registeredEmail || "admin@gmail.com");
+  const [password, setPassword] = useState(registeredPassword || (registeredEmail ? "" : "test123"));
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successNotice, setSuccessNotice] = useState<string | null>(
+    justRegistered && registeredEmail
+      ? `Akun baru (${registeredEmail}) siap digunakan! Silakan klik Masuk Sekarang.`
+      : null
+  );
+
+  useEffect(() => {
+    if (registeredEmail) {
+      setIdentifier(registeredEmail);
+      if (registeredPassword) {
+        setPassword(registeredPassword);
+      }
+      setSuccessNotice(`Akun baru (${registeredEmail}) siap digunakan! Silakan klik Masuk Sekarang.`);
+    }
+  }, [registeredEmail, registeredPassword]);
 
   const handleLogin = async () => {
     setErrorMessage(null);
@@ -57,12 +76,14 @@ export default function LoginScreen() {
     setIdentifier("");
     setPassword("");
     setErrorMessage(null);
+    setSuccessNotice(null);
   };
 
   const handleFillDefault = () => {
     setIdentifier("admin@gmail.com");
     setPassword("test123");
     setErrorMessage(null);
+    setSuccessNotice(null);
   };
 
   const handleForgotPassword = () => {
@@ -135,6 +156,12 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               )}
             </View>
+
+            {successNotice ? (
+              <View style={styles.successBanner}>
+                <Text style={styles.successBannerText}>✓ {successNotice}</Text>
+              </View>
+            ) : null}
 
             {errorMessage ? (
               <View style={styles.errorBanner}>
@@ -340,6 +367,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     color: "#1D4ED8",
+  },
+  successBanner: {
+    backgroundColor: "#ECFDF5",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+  },
+  successBannerText: {
+    color: "#065F46",
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
   },
   errorBanner: {
     backgroundColor: "#FEF2F2",

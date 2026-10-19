@@ -17,9 +17,17 @@ export default function SuccessScreen() {
   const fullName = (params.fullName as string) || "Mahasiswa";
   const username = (params.username as string) || "";
   const email = (params.email as string) || "";
+  const registeredPassword = (params.registeredPassword as string) || "";
 
   const handleContinue = () => {
-    router.replace("/login");
+    router.replace({
+      pathname: "/login",
+      params: {
+        registeredEmail: email || username,
+        registeredPassword: registeredPassword,
+        justRegistered: "1",
+      },
+    });
   };
 
   return (
