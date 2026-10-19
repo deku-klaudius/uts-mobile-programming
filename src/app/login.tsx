@@ -53,6 +53,18 @@ export default function LoginScreen() {
     }
   };
 
+  const handleClearForm = () => {
+    setIdentifier("");
+    setPassword("");
+    setErrorMessage(null);
+  };
+
+  const handleFillDefault = () => {
+    setIdentifier("admin@gmail.com");
+    setPassword("test123");
+    setErrorMessage(null);
+  };
+
   const handleForgotPassword = () => {
     Alert.alert(
       "Informasi Login",
@@ -102,6 +114,28 @@ export default function LoginScreen() {
 
           {/* Form Inputs */}
           <View style={styles.formContainer}>
+            {/* Quick Action: Hapus Form / Isi Ulang */}
+            <View style={styles.formActionHeader}>
+              <Text style={styles.formLabelTitle}>Data Akun Login</Text>
+              {identifier || password ? (
+                <TouchableOpacity
+                  onPress={handleClearForm}
+                  style={styles.clearFormBtn}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.clearFormBtnText}>✕ Hapus / Kosongkan Form</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={handleFillDefault}
+                  style={styles.fillDefaultBtn}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.fillDefaultBtnText}>↺ Isi Akun admin@gmail.com</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
             {errorMessage ? (
               <View style={styles.errorBanner}>
                 <Text style={styles.errorBannerText}>{errorMessage}</Text>
@@ -269,6 +303,43 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     marginTop: 6,
+  },
+  formActionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  formLabelTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#475569",
+  },
+  clearFormBtn: {
+    backgroundColor: "#FEE2E2",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+  },
+  clearFormBtnText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#DC2626",
+  },
+  fillDefaultBtn: {
+    backgroundColor: "#EFF6FF",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+  },
+  fillDefaultBtnText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#1D4ED8",
   },
   errorBanner: {
     backgroundColor: "#FEF2F2",

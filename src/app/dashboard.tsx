@@ -23,6 +23,7 @@ interface NoteItem {
 }
 
 const STORAGE_NOTES_KEY = "@uts_notes_dashboard";
+const STORAGE_PROFILE_KEY = "@uts_student_profile_custom";
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -30,11 +31,23 @@ export default function DashboardScreen() {
   const [user, setUser] = useState<UserAccount | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Quick Notes state
+  // Identitas Mahasiswa yang bisa diubah (Editable Student Profile)
+  const [studentName, setStudentName] = useState("Klaudius Oe Naimnou");
+  const [studentNim, setStudentNim] = useState("240444020010");
+  const [studentClass, setStudentClass] = useState("Informatika Komputer (IK-24)");
+
+  // Modal Ubah Profil
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [tempName, setTempName] = useState("");
+  const [tempNim, setTempNim] = useState("");
+  const [tempClass, setTempClass] = useState("");
+
+  // Quick Notes state (Tambah & Ubah & Hapus)
   const [notes, setNotes] = useState<NoteItem[]>([]);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [newNoteTitle, setNewNoteTitle] = useState("");
-  const [newNoteContent, setNewNoteContent] = useState("");
+  const [noteModalVisible, setNoteModalVisible] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteTitle, setNoteTitle] = useState("");
+  const [noteContent, setNoteContent] = useState("");
   const [savingNote, setSavingNote] = useState(false);
 
   useEffect(() => {
@@ -51,6 +64,15 @@ export default function DashboardScreen() {
       }
       setUser(activeUser);
 
+      // Load custom profile if edited
+      const profileRaw = await AsyncStorage.getItem(STORAGE_PROFILE_KEY);
+      if (profileRaw) {
+        const parsed = JSON.parse(profileRaw);
+        if (parsed.name) setStudentName(parsed.name);
+        if (parsed.nim) setStudentNim(parsed.nim);
+        if (parsed.className) setStudentClass(parsed.className);
+      }
+
       // Load notes
       const notesRaw = await AsyncStorage.getItem(STORAGE_NOTES_KEY);
       if (notesRaw) {
@@ -66,7 +88,7 @@ export default function DashboardScreen() {
           {
             id: "2",
             title: "Status Akun Login",
-            content: "Berhasil masuk menggunakan sistem autentikasi lokal",
+            content: "Berhasil masuk menggunakan akun: admin@gmail.com (test123)",
             date: new Date().toLocaleDateString("id-ID"),
           },
         ];
@@ -98,28 +120,102 @@ export default function DashboardScreen() {
     );
   };
 
-  const handleAddNote = async () => {
-    if (!newNoteTitle.trim()) {
+  // --- LOGIKA EDIT & HAPUS IDENTITAS MAHASISWA ---
+  const handleOpenEditProfile = () => {
+    setTempName(studentName);
+    setTempNim(studentNim);
+    setTempClass(studentClass);
+    setProfileModalVisible(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!tempName.trim()) {
+      Alert.alert("Perhatian", "Nama tidak boleh kosong.");
+      return;
+    }
+    const updatedProfile = {
+      name: tempName.trim(),
+      nim: tempNim.trim() || studentNim,
+      className: tempClass.trim() || studentClass,
+    };
+    setStudentName(updatedProfile.name);
+    setStudentNim(updatedProfile.nim);
+    setStudentClass(updatedProfile.className);
+    await AsyncStorage.setItem(STORAGE_PROFILE_KEY, JSON.stringify(updatedProfile));
+    setProfileModalVisible(false);
+    Alert.alert("Berhasil", "Data identitas mahasiswa berhasil diperbarui!");
+  };
+
+  const handleResetProfile = async () => {
+    const defaultProfile = {
+      name: "Klaudius Oe Naimnou",
+      nim: "240444020010",
+      className: "Informatika Komputer (IK-24)",
+    };
+    setStudentName(defaultProfile.name);
+    setStudentNim(defaultProfile.nim);
+    setStudentClass(defaultProfile.className);
+    await AsyncStorage.removeItem(STORAGE_PROFILE_KEY);
+    setProfileModalVisible(false);
+    Alert.alert("Direset", "Identitas dikembalikan ke default data mahasiswa!");
+  };
+
+  // --- LOGIKA TAMBAH, UBAH & HAPUS CATATAN ---
+  const handleOpenAddNote = () => {
+    setEditingNoteId(null);
+    setNoteTitle("");
+    setNoteContent("");
+    setNoteModalVisible(true);
+  };
+
+  const handleOpenEditNote = (item: NoteItem) => {
+    setEditingNoteId(item.id);
+    setNoteTitle(item.title);
+    setNoteContent(item.content);
+    setNoteModalVisible(true);
+  };
+
+  const handleSaveNote = async () => {
+    if (!noteTitle.trim()) {
       Alert.alert("Perhatian", "Judul catatan tidak boleh kosong.");
       return;
     }
 
     setSavingNote(true);
     try {
-      const newNote: NoteItem = {
-        id: String(Date.now()),
-        title: newNoteTitle.trim(),
-        content: newNoteContent.trim() || "-",
-        date: new Date().toLocaleDateString("id-ID"),
-      };
-      const updated = [newNote, ...notes];
-      setNotes(updated);
-      await AsyncStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(updated));
+      if (editingNoteId) {
+        // Mode UBAH (Edit)
+        const updated = notes.map((n) =>
+          n.id === editingNoteId
+            ? {
+                ...n,
+                title: noteTitle.trim(),
+                content: noteContent.trim() || "-",
+                date: new Date().toLocaleDateString("id-ID") + " (diedit)",
+              }
+            : n
+        );
+        setNotes(updated);
+        await AsyncStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(updated));
+        Alert.alert("Berhasil", "Catatan berhasil diperbarui!");
+      } else {
+        // Mode TAMBAH (Add)
+        const newNote: NoteItem = {
+          id: String(Date.now()),
+          title: noteTitle.trim(),
+          content: noteContent.trim() || "-",
+          date: new Date().toLocaleDateString("id-ID"),
+        };
+        const updated = [newNote, ...notes];
+        setNotes(updated);
+        await AsyncStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(updated));
+        Alert.alert("Berhasil", "Catatan baru berhasil ditambahkan!");
+      }
 
-      setNewNoteTitle("");
-      setNewNoteContent("");
-      setModalVisible(false);
-      Alert.alert("Berhasil", "Catatan berhasil ditambahkan!");
+      setNoteModalVisible(false);
+      setEditingNoteId(null);
+      setNoteTitle("");
+      setNoteContent("");
     } catch (e: any) {
       Alert.alert("Gagal", e.message || "Gagal menyimpan catatan.");
     } finally {
@@ -128,7 +224,7 @@ export default function DashboardScreen() {
   };
 
   const handleDeleteNote = (id: string) => {
-    Alert.alert("Hapus Catatan", "Hapus catatan ini?", [
+    Alert.alert("Hapus Catatan", "Apakah anda yakin ingin menghapus catatan ini?", [
       { text: "Batal", style: "cancel" },
       {
         text: "Hapus",
@@ -137,6 +233,7 @@ export default function DashboardScreen() {
           const updated = notes.filter((n) => n.id !== id);
           setNotes(updated);
           await AsyncStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(updated));
+          Alert.alert("Dihapus", "Catatan telah berhasil dihapus.");
         },
       },
     ]);
@@ -153,14 +250,12 @@ export default function DashboardScreen() {
     );
   }
 
-  const userInitials = user?.fullName
-    ? user.fullName
-        .split(" ")
-        .map((n) => n[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
-    : "KO";
+  const userInitials = studentName
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -172,15 +267,15 @@ export default function DashboardScreen() {
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.greetingText}>
-              Halo, {user?.fullName || "Klaudius"}! 👋
+              Halo, {studentName}! 👋
             </Text>
             <Text style={styles.subGreetingText}>
-              Dashboard Utama • Role: {user?.role || "Mahasiswa"}
+              Dashboard Utama • Sata Lesmana, M.Kom.
             </Text>
           </View>
 
           <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>{userInitials}</Text>
+            <Text style={styles.avatarText}>{userInitials || "KO"}</Text>
           </View>
         </View>
 
@@ -196,24 +291,28 @@ export default function DashboardScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>🎓 Identitas Mahasiswa (UTS)</Text>
-            <View style={styles.badgePrimary}>
-              <Text style={styles.badgePrimaryText}>Style 6</Text>
-            </View>
+            <TouchableOpacity
+              style={styles.editProfileButton}
+              onPress={handleOpenEditProfile}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.editProfileButtonText}>✏️ Ubah Data</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.tableRow}>
             <Text style={styles.tableLabel}>Nama Mahasiswa</Text>
-            <Text style={styles.tableValue}>Klaudius Oe Naimnou</Text>
+            <Text style={styles.tableValue}>{studentName}</Text>
           </View>
 
           <View style={styles.tableRow}>
             <Text style={styles.tableLabel}>NIM</Text>
-            <Text style={styles.tableValue}>240444020010</Text>
+            <Text style={styles.tableValue}>{studentNim}</Text>
           </View>
 
           <View style={styles.tableRow}>
             <Text style={styles.tableLabel}>Kelas</Text>
-            <Text style={styles.tableValue}>Informatika Komputer (IK-24)</Text>
+            <Text style={styles.tableValue}>{studentClass}</Text>
           </View>
 
           <View style={styles.tableRow}>
@@ -229,7 +328,7 @@ export default function DashboardScreen() {
           <View style={styles.tableRowLast}>
             <Text style={styles.tableLabel}>Akun Login Saat Ini</Text>
             <Text style={[styles.tableValue, { color: "#2B92E4" }]}>
-              {user?.email || "klaudius@lp3i.ac.id"}
+              {user?.email || "admin@gmail.com"}
             </Text>
           </View>
         </View>
@@ -291,13 +390,18 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Fitur Sederhana: Catatan Cepat Mahasiswa */}
+        {/* Fitur Sederhana: Catatan Cepat Mahasiswa (Ada Tombol Ubah & Hapus) */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>📝 Catatan Cepat Mahasiswa</Text>
+            <View>
+              <Text style={styles.cardTitle}>📝 Catatan Cepat Mahasiswa</Text>
+              <Text style={styles.cardSubtitle}>
+                Bisa Tambah, Ubah (Edit), atau Hapus catatan
+              </Text>
+            </View>
             <TouchableOpacity
               style={styles.addNoteBtn}
-              onPress={() => setModalVisible(true)}
+              onPress={handleOpenAddNote}
               activeOpacity={0.8}
             >
               <Text style={styles.addNoteBtnText}>+ Tambah</Text>
@@ -309,17 +413,30 @@ export default function DashboardScreen() {
           ) : (
             notes.map((item) => (
               <View key={item.id} style={styles.noteItem}>
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, marginRight: 8 }}>
                   <Text style={styles.noteTitle}>{item.title}</Text>
                   <Text style={styles.noteContent}>{item.content}</Text>
                   <Text style={styles.noteDate}>{item.date}</Text>
                 </View>
-                <TouchableOpacity
-                  onPress={() => handleDeleteNote(item.id)}
-                  style={styles.deleteNoteBtn}
-                >
-                  <Text style={styles.deleteNoteBtnText}>🗑️</Text>
-                </TouchableOpacity>
+
+                {/* Tombol UBAH dan HAPUS yang JELAS */}
+                <View style={styles.noteActionsRow}>
+                  <TouchableOpacity
+                    onPress={() => handleOpenEditNote(item)}
+                    style={styles.actionBtnEdit}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={styles.actionBtnEditText}>✏️ Ubah</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => handleDeleteNote(item.id)}
+                    style={styles.actionBtnDelete}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={styles.actionBtnDeleteText}>🗑️ Hapus</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ))
           )}
@@ -339,45 +456,123 @@ export default function DashboardScreen() {
         </Text>
       </ScrollView>
 
-      {/* Modal Tambah Catatan */}
+      {/* MODAL 1: UBAH IDENTITAS MAHASISWA */}
       <Modal
-        visible={modalVisible}
+        visible={profileModalVisible}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={() => setProfileModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Tambah Catatan Baru</Text>
+            <Text style={styles.modalTitle}>✏️ Ubah Identitas Mahasiswa</Text>
 
+            <Text style={styles.inputFieldLabel}>Nama Lengkap:</Text>
             <TextInput
               style={styles.modalInput}
-              placeholder="Judul catatan"
-              placeholderTextColor="#94A3B8"
-              value={newNoteTitle}
-              onChangeText={setNewNoteTitle}
+              value={tempName}
+              onChangeText={setTempName}
+              placeholder="Nama Lengkap"
             />
 
+            <Text style={styles.inputFieldLabel}>NIM:</Text>
             <TextInput
-              style={[styles.modalInput, { height: 90, textAlignVertical: "top" }]}
-              placeholder="Isi catatan..."
-              placeholderTextColor="#94A3B8"
-              value={newNoteContent}
-              onChangeText={setNewNoteContent}
-              multiline
+              style={styles.modalInput}
+              value={tempNim}
+              onChangeText={setTempNim}
+              placeholder="NIM Mahasiswa"
+              keyboardType="number-pad"
+            />
+
+            <Text style={styles.inputFieldLabel}>Kelas / Rombel:</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={tempClass}
+              onChangeText={setTempClass}
+              placeholder="Kelas (cth: Informatika Komputer)"
             />
 
             <View style={styles.modalActions}>
               <TouchableOpacity
+                style={styles.modalResetBtn}
+                onPress={handleResetProfile}
+              >
+                <Text style={styles.modalResetText}>Reset Asli</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 style={styles.modalCancelBtn}
-                onPress={() => setModalVisible(false)}
+                onPress={() => setProfileModalVisible(false)}
               >
                 <Text style={styles.modalCancelText}>Batal</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.modalSaveBtn}
-                onPress={handleAddNote}
+                onPress={handleSaveProfile}
+              >
+                <Text style={styles.modalSaveText}>Simpan</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL 2: TAMBAH / UBAH CATATAN */}
+      <Modal
+        visible={noteModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setNoteModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {editingNoteId ? "✏️ Ubah Catatan" : "📝 Tambah Catatan Baru"}
+            </Text>
+
+            <Text style={styles.inputFieldLabel}>Judul Catatan:</Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Judul catatan"
+              placeholderTextColor="#94A3B8"
+              value={noteTitle}
+              onChangeText={setNoteTitle}
+            />
+
+            <Text style={styles.inputFieldLabel}>Isi Catatan:</Text>
+            <TextInput
+              style={[styles.modalInput, { height: 90, textAlignVertical: "top" }]}
+              placeholder="Isi catatan..."
+              placeholderTextColor="#94A3B8"
+              value={noteContent}
+              onChangeText={setNoteContent}
+              multiline
+            />
+
+            <View style={styles.modalActions}>
+              {editingNoteId ? (
+                <TouchableOpacity
+                  style={styles.modalDeleteInsideBtn}
+                  onPress={() => {
+                    setNoteModalVisible(false);
+                    handleDeleteNote(editingNoteId);
+                  }}
+                >
+                  <Text style={styles.modalDeleteInsideText}>🗑️ Hapus</Text>
+                </TouchableOpacity>
+              ) : null}
+
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setNoteModalVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Batal</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalSaveBtn}
+                onPress={handleSaveNote}
                 disabled={savingNote}
               >
                 {savingNote ? (
@@ -489,14 +684,21 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#1E293B",
   },
-  badgePrimary: {
-    backgroundColor: "#2B92E4",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+  cardSubtitle: {
+    fontSize: 11,
+    color: "#64748B",
+    marginTop: 1,
   },
-  badgePrimaryText: {
-    color: "#FFFFFF",
+  editProfileButton: {
+    backgroundColor: "#EFF6FF",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+  },
+  editProfileButtonText: {
+    color: "#1D4ED8",
     fontSize: 11,
     fontWeight: "700",
   },
@@ -586,8 +788,8 @@ const styles = StyleSheet.create({
   },
   addNoteBtn: {
     backgroundColor: "#2B92E4",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 8,
   },
   addNoteBtnText: {
@@ -602,17 +804,15 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   noteItem: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: "#F8FAFC",
     padding: 12,
-    borderRadius: 10,
-    marginBottom: 8,
+    borderRadius: 12,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
   noteTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
     color: "#0F172A",
   },
@@ -620,18 +820,47 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#475569",
     marginTop: 3,
+    lineHeight: 18,
   },
   noteDate: {
     fontSize: 10,
     color: "#94A3B8",
-    marginTop: 4,
+    marginTop: 6,
   },
-  deleteNoteBtn: {
-    padding: 8,
-    marginLeft: 6,
+  noteActionsRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
   },
-  deleteNoteBtnText: {
-    fontSize: 16,
+  actionBtnEdit: {
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#93C5FD",
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  actionBtnEditText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#1D4ED8",
+  },
+  actionBtnDelete: {
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  actionBtnDeleteText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#DC2626",
   },
   logoutButton: {
     backgroundColor: "#FEE2E2",
@@ -666,47 +895,78 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     width: "100%",
-    maxWidth: 360,
+    maxWidth: 380,
   },
   modalTitle: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "800",
     color: "#0F172A",
-    marginBottom: 14,
+    marginBottom: 12,
+  },
+  inputFieldLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#475569",
+    marginBottom: 4,
   },
   modalInput: {
     borderWidth: 1,
     borderColor: "#CBD5E1",
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 9,
     fontSize: 13,
     color: "#1E293B",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   modalActions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    gap: 10,
-    marginTop: 6,
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
+  },
+  modalResetBtn: {
+    marginRight: "auto",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  modalResetText: {
+    fontSize: 12,
+    color: "#F59E0B",
+    fontWeight: "700",
+  },
+  modalDeleteInsideBtn: {
+    marginRight: "auto",
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  modalDeleteInsideText: {
+    fontSize: 12,
+    color: "#DC2626",
+    fontWeight: "700",
   },
   modalCancelBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
   },
   modalCancelText: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#64748B",
     fontWeight: "600",
   },
   modalSaveBtn: {
     backgroundColor: "#2B92E4",
-    paddingVertical: 10,
+    paddingVertical: 9,
     paddingHorizontal: 18,
-    borderRadius: 10,
+    borderRadius: 8,
   },
   modalSaveText: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#FFFFFF",
     fontWeight: "700",
   },
