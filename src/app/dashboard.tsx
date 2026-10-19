@@ -15,14 +15,6 @@ import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authService, UserAccount } from "../../lib/auth";
 
-interface NoteItem {
-  id: string;
-  title: string;
-  content: string;
-  date: string;
-}
-
-const STORAGE_NOTES_KEY = "@uts_notes_dashboard";
 const STORAGE_PROFILE_KEY = "@uts_student_profile_custom";
 
 export default function DashboardScreen() {
@@ -31,7 +23,7 @@ export default function DashboardScreen() {
   const [user, setUser] = useState<UserAccount | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Identitas Mahasiswa yang bisa diubah (Editable Student Profile)
+  // Identitas Mahasiswa
   const [studentName, setStudentName] = useState("Klaudius Oe Naimnou");
   const [studentNim, setStudentNim] = useState("240444020010");
   const [studentClass, setStudentClass] = useState("Informatika Komputer (IK-24)");
@@ -41,14 +33,6 @@ export default function DashboardScreen() {
   const [tempName, setTempName] = useState("");
   const [tempNim, setTempNim] = useState("");
   const [tempClass, setTempClass] = useState("");
-
-  // Quick Notes state (Tambah & Ubah & Hapus)
-  const [notes, setNotes] = useState<NoteItem[]>([]);
-  const [noteModalVisible, setNoteModalVisible] = useState(false);
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  const [noteTitle, setNoteTitle] = useState("");
-  const [noteContent, setNoteContent] = useState("");
-  const [savingNote, setSavingNote] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -64,36 +48,13 @@ export default function DashboardScreen() {
       }
       setUser(activeUser);
 
-      // Load custom profile if edited
+      // Load custom profile if previously edited
       const profileRaw = await AsyncStorage.getItem(STORAGE_PROFILE_KEY);
       if (profileRaw) {
         const parsed = JSON.parse(profileRaw);
         if (parsed.name) setStudentName(parsed.name);
         if (parsed.nim) setStudentNim(parsed.nim);
         if (parsed.className) setStudentClass(parsed.className);
-      }
-
-      // Load notes
-      const notesRaw = await AsyncStorage.getItem(STORAGE_NOTES_KEY);
-      if (notesRaw) {
-        setNotes(JSON.parse(notesRaw));
-      } else {
-        const defaultNotes: NoteItem[] = [
-          {
-            id: "1",
-            title: "Tugas UTS Mobile Programming",
-            content: "Dosen: Sata Lesmana, M.Kom. • Selesai dikerjakan sesuai Style 6",
-            date: new Date().toLocaleDateString("id-ID"),
-          },
-          {
-            id: "2",
-            title: "Status Akun Login",
-            content: "Berhasil masuk menggunakan akun: admin@gmail.com (test123)",
-            date: new Date().toLocaleDateString("id-ID"),
-          },
-        ];
-        setNotes(defaultNotes);
-        await AsyncStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(defaultNotes));
       }
     } catch (e) {
       console.warn("Dashboard load error:", e);
@@ -120,7 +81,6 @@ export default function DashboardScreen() {
     );
   };
 
-  // --- LOGIKA EDIT & HAPUS IDENTITAS MAHASISWA ---
   const handleOpenEditProfile = () => {
     setTempName(studentName);
     setTempNim(studentNim);
@@ -158,85 +118,6 @@ export default function DashboardScreen() {
     await AsyncStorage.removeItem(STORAGE_PROFILE_KEY);
     setProfileModalVisible(false);
     Alert.alert("Direset", "Identitas dikembalikan ke default data mahasiswa!");
-  };
-
-  // --- LOGIKA TAMBAH, UBAH & HAPUS CATATAN ---
-  const handleOpenAddNote = () => {
-    setEditingNoteId(null);
-    setNoteTitle("");
-    setNoteContent("");
-    setNoteModalVisible(true);
-  };
-
-  const handleOpenEditNote = (item: NoteItem) => {
-    setEditingNoteId(item.id);
-    setNoteTitle(item.title);
-    setNoteContent(item.content);
-    setNoteModalVisible(true);
-  };
-
-  const handleSaveNote = async () => {
-    if (!noteTitle.trim()) {
-      Alert.alert("Perhatian", "Judul catatan tidak boleh kosong.");
-      return;
-    }
-
-    setSavingNote(true);
-    try {
-      if (editingNoteId) {
-        // Mode UBAH (Edit)
-        const updated = notes.map((n) =>
-          n.id === editingNoteId
-            ? {
-                ...n,
-                title: noteTitle.trim(),
-                content: noteContent.trim() || "-",
-                date: new Date().toLocaleDateString("id-ID") + " (diedit)",
-              }
-            : n
-        );
-        setNotes(updated);
-        await AsyncStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(updated));
-        Alert.alert("Berhasil", "Catatan berhasil diperbarui!");
-      } else {
-        // Mode TAMBAH (Add)
-        const newNote: NoteItem = {
-          id: String(Date.now()),
-          title: noteTitle.trim(),
-          content: noteContent.trim() || "-",
-          date: new Date().toLocaleDateString("id-ID"),
-        };
-        const updated = [newNote, ...notes];
-        setNotes(updated);
-        await AsyncStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(updated));
-        Alert.alert("Berhasil", "Catatan baru berhasil ditambahkan!");
-      }
-
-      setNoteModalVisible(false);
-      setEditingNoteId(null);
-      setNoteTitle("");
-      setNoteContent("");
-    } catch (e: any) {
-      Alert.alert("Gagal", e.message || "Gagal menyimpan catatan.");
-    } finally {
-      setSavingNote(false);
-    }
-  };
-
-  const handleDeleteNote = (id: string) => {
-    Alert.alert("Hapus Catatan", "Apakah anda yakin ingin menghapus catatan ini?", [
-      { text: "Batal", style: "cancel" },
-      {
-        text: "Hapus",
-        style: "destructive",
-        onPress: async () => {
-          const updated = notes.filter((n) => n.id !== id);
-          setNotes(updated);
-          await AsyncStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(updated));
-          Alert.alert("Dihapus", "Catatan telah berhasil dihapus.");
-        },
-      },
-    ]);
   };
 
   if (loading) {
@@ -283,7 +164,7 @@ export default function DashboardScreen() {
         <View style={styles.statusSuccessBanner}>
           <View style={styles.statusDot} />
           <Text style={styles.statusSuccessBannerText}>
-            Status Login: Berhasil Masuk ({user?.username})
+            Status Login: Berhasil Masuk ({user?.username || "admin@gmail.com"})
           </Text>
         </View>
 
@@ -333,115 +214,6 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Quick Stats Grid */}
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <Text style={styles.statEmoji}>📚</Text>
-            <Text style={styles.statValue}>4 SKS</Text>
-            <Text style={styles.statLabel}>Beban SKS</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={styles.statEmoji}>⏱️</Text>
-            <Text style={styles.statValue}>200 Menit</Text>
-            <Text style={styles.statLabel}>Waktu UTS</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={styles.statEmoji}>✅</Text>
-            <Text style={styles.statValue}>Selesai</Text>
-            <Text style={styles.statLabel}>Status Modul</Text>
-          </View>
-        </View>
-
-        {/* Jadwal Kuliah Section */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>📅 Jadwal Perkuliahan Hari Ini</Text>
-
-          <View style={styles.scheduleItem}>
-            <View style={styles.scheduleTimeBadge}>
-              <Text style={styles.scheduleTimeText}>08:00 - 11:20</Text>
-            </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.scheduleSubject}>Mobile Programming</Text>
-              <Text style={styles.scheduleDetail}>
-                Dosen: Sata Lesmana, M.Kom. • Lab Komputer
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.scheduleItem}>
-            <View
-              style={[
-                styles.scheduleTimeBadge,
-                { backgroundColor: "#EFF6FF", borderColor: "#BFDBFE" },
-              ]}
-            >
-              <Text style={[styles.scheduleTimeText, { color: "#1D4ED8" }]}>
-                13:00 - 15:30
-              </Text>
-            </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.scheduleSubject}>Rekayasa Perangkat Lunak</Text>
-              <Text style={styles.scheduleDetail}>
-                Praktikum Basis Data • Ruang Teori 104
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Fitur Sederhana: Catatan Cepat Mahasiswa (Ada Tombol Ubah & Hapus) */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View>
-              <Text style={styles.cardTitle}>📝 Catatan Cepat Mahasiswa</Text>
-              <Text style={styles.cardSubtitle}>
-                Bisa Tambah, Ubah (Edit), atau Hapus catatan
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.addNoteBtn}
-              onPress={handleOpenAddNote}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.addNoteBtnText}>+ Tambah</Text>
-            </TouchableOpacity>
-          </View>
-
-          {notes.length === 0 ? (
-            <Text style={styles.emptyText}>Belum ada catatan. Tambah sekarang!</Text>
-          ) : (
-            notes.map((item) => (
-              <View key={item.id} style={styles.noteItem}>
-                <View style={{ flex: 1, marginRight: 8 }}>
-                  <Text style={styles.noteTitle}>{item.title}</Text>
-                  <Text style={styles.noteContent}>{item.content}</Text>
-                  <Text style={styles.noteDate}>{item.date}</Text>
-                </View>
-
-                {/* Tombol UBAH dan HAPUS yang JELAS */}
-                <View style={styles.noteActionsRow}>
-                  <TouchableOpacity
-                    onPress={() => handleOpenEditNote(item)}
-                    style={styles.actionBtnEdit}
-                    activeOpacity={0.75}
-                  >
-                    <Text style={styles.actionBtnEditText}>✏️ Ubah</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => handleDeleteNote(item.id)}
-                    style={styles.actionBtnDelete}
-                    activeOpacity={0.75}
-                  >
-                    <Text style={styles.actionBtnDeleteText}>🗑️ Hapus</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-          )}
-        </View>
-
         {/* Action Logout */}
         <TouchableOpacity
           style={styles.logoutButton}
@@ -456,7 +228,7 @@ export default function DashboardScreen() {
         </Text>
       </ScrollView>
 
-      {/* MODAL 1: UBAH IDENTITAS MAHASISWA */}
+      {/* MODAL: UBAH IDENTITAS MAHASISWA */}
       <Modal
         visible={profileModalVisible}
         transparent={true}
@@ -517,74 +289,6 @@ export default function DashboardScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* MODAL 2: TAMBAH / UBAH CATATAN */}
-      <Modal
-        visible={noteModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setNoteModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {editingNoteId ? "✏️ Ubah Catatan" : "📝 Tambah Catatan Baru"}
-            </Text>
-
-            <Text style={styles.inputFieldLabel}>Judul Catatan:</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Judul catatan"
-              placeholderTextColor="#94A3B8"
-              value={noteTitle}
-              onChangeText={setNoteTitle}
-            />
-
-            <Text style={styles.inputFieldLabel}>Isi Catatan:</Text>
-            <TextInput
-              style={[styles.modalInput, { height: 90, textAlignVertical: "top" }]}
-              placeholder="Isi catatan..."
-              placeholderTextColor="#94A3B8"
-              value={noteContent}
-              onChangeText={setNoteContent}
-              multiline
-            />
-
-            <View style={styles.modalActions}>
-              {editingNoteId ? (
-                <TouchableOpacity
-                  style={styles.modalDeleteInsideBtn}
-                  onPress={() => {
-                    setNoteModalVisible(false);
-                    handleDeleteNote(editingNoteId);
-                  }}
-                >
-                  <Text style={styles.modalDeleteInsideText}>🗑️ Hapus</Text>
-                </TouchableOpacity>
-              ) : null}
-
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
-                onPress={() => setNoteModalVisible(false)}
-              >
-                <Text style={styles.modalCancelText}>Batal</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.modalSaveBtn}
-                onPress={handleSaveNote}
-                disabled={savingNote}
-              >
-                {savingNote ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text style={styles.modalSaveText}>Simpan</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -600,7 +304,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: 16,
     paddingBottom: 32,
   },
   headerRow: {
@@ -643,7 +347,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderRadius: 10,
-    marginBottom: 14,
+    marginBottom: 16,
     backgroundColor: "#ECFDF5",
     borderWidth: 1,
     borderColor: "#A7F3D0",
@@ -664,7 +368,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     shadowColor: "#000000",
@@ -684,11 +388,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#1E293B",
   },
-  cardSubtitle: {
-    fontSize: 11,
-    color: "#64748B",
-    marginTop: 1,
-  },
   editProfileButton: {
     backgroundColor: "#EFF6FF",
     paddingHorizontal: 10,
@@ -705,14 +404,14 @@ const styles = StyleSheet.create({
   tableRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#F1F5F9",
   },
   tableRowLast: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
   tableLabel: {
     fontSize: 13,
@@ -725,142 +424,6 @@ const styles = StyleSheet.create({
     textAlign: "right",
     flex: 1,
     marginLeft: 10,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-    gap: 10,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  statEmoji: {
-    fontSize: 22,
-    marginBottom: 4,
-  },
-  statValue: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  statLabel: {
-    fontSize: 11,
-    color: "#64748B",
-    marginTop: 2,
-  },
-  scheduleItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
-  scheduleTimeBadge: {
-    backgroundColor: "#F0FDF4",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#BBF7D0",
-  },
-  scheduleTimeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#166534",
-  },
-  scheduleSubject: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#1E293B",
-  },
-  scheduleDetail: {
-    fontSize: 11,
-    color: "#64748B",
-    marginTop: 2,
-  },
-  addNoteBtn: {
-    backgroundColor: "#2B92E4",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  addNoteBtnText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  emptyText: {
-    fontSize: 13,
-    color: "#94A3B8",
-    textAlign: "center",
-    marginVertical: 12,
-  },
-  noteItem: {
-    backgroundColor: "#F8FAFC",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  noteTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  noteContent: {
-    fontSize: 12,
-    color: "#475569",
-    marginTop: 3,
-    lineHeight: 18,
-  },
-  noteDate: {
-    fontSize: 10,
-    color: "#94A3B8",
-    marginTop: 6,
-  },
-  noteActionsRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-    marginTop: 10,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#E2E8F0",
-  },
-  actionBtnEdit: {
-    backgroundColor: "#EFF6FF",
-    borderWidth: 1,
-    borderColor: "#93C5FD",
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 6,
-  },
-  actionBtnEditText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#1D4ED8",
-  },
-  actionBtnDelete: {
-    backgroundColor: "#FEF2F2",
-    borderWidth: 1,
-    borderColor: "#FCA5A5",
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 6,
-  },
-  actionBtnDeleteText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#DC2626",
   },
   logoutButton: {
     backgroundColor: "#FEE2E2",
@@ -934,20 +497,6 @@ const styles = StyleSheet.create({
   modalResetText: {
     fontSize: 12,
     color: "#F59E0B",
-    fontWeight: "700",
-  },
-  modalDeleteInsideBtn: {
-    marginRight: "auto",
-    backgroundColor: "#FEF2F2",
-    borderWidth: 1,
-    borderColor: "#FCA5A5",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  modalDeleteInsideText: {
-    fontSize: 12,
-    color: "#DC2626",
     fontWeight: "700",
   },
   modalCancelBtn: {
