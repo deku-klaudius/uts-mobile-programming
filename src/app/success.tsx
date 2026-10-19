@@ -15,11 +15,10 @@ export default function SuccessScreen() {
   const params = useLocalSearchParams();
 
   const fullName = (params.fullName as string) || "Mahasiswa";
+  const username = (params.username as string) || "";
   const email = (params.email as string) || "";
-  const isFallback = params.isFallback === "true";
 
   const handleContinue = () => {
-    // Arahkan ke halaman login
     router.replace("/login");
   };
 
@@ -55,21 +54,22 @@ export default function SuccessScreen() {
               <Text style={styles.infoLabel}>Nama Terdaftar:</Text>
               <Text style={styles.infoValue}>{fullName}</Text>
             </View>
+            {username ? (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Username:</Text>
+                <Text style={[styles.infoValue, { color: "#2B92E4" }]}>{username}</Text>
+              </View>
+            ) : null}
             {email ? (
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Email Akun:</Text>
+                <Text style={styles.infoLabel}>Email:</Text>
                 <Text style={styles.infoValue}>{email}</Text>
               </View>
             ) : null}
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Penyimpanan:</Text>
-              <Text
-                style={[
-                  styles.infoValue,
-                  { color: isFallback ? "#F59E0B" : "#10B981" },
-                ]}
-              >
-                {isFallback ? "Local Storage Cache (Ready)" : "Supabase Cloud Database"}
+              <Text style={styles.infoLabel}>Status Akun:</Text>
+              <Text style={[styles.infoValue, { color: "#10B981" }]}>
+                Aktif & Siap Digunakan
               </Text>
             </View>
           </View>

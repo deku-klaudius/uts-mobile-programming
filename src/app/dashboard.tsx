@@ -12,17 +12,22 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import {
-  authService,
-  UserData,
-  NoteItem,
-  isSupabaseConfigured,
-} from "../../lib/supabase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { authService, UserAccount } from "../../lib/auth";
+
+interface NoteItem {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+}
+
+const STORAGE_NOTES_KEY = "@uts_notes_dashboard";
 
 export default function DashboardScreen() {
   const router = useRouter();
 
-  const [user, setUser] = useState<UserData | null>(null);
+  const [user, setUser] = useState<UserAccount | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Quick Notes state
@@ -41,14 +46,33 @@ export default function DashboardScreen() {
     try {
       const activeUser = await authService.getActiveSession();
       if (!activeUser) {
-        // Jika tidak ada sesi, redirect ke login
         router.replace("/login");
         return;
       }
       setUser(activeUser);
 
-      const savedNotes = await authService.getNotes();
-      setNotes(savedNotes);
+      // Load notes
+      const notesRaw = await AsyncStorage.getItem(STORAGE_NOTES_KEY);
+      if (notesRaw) {
+        setNotes(JSON.parse(notesRaw));
+      } else {
+        const defaultNotes: NoteItem[] = [
+          {
+            id: "1",
+            title: "Tugas UTS Mobile Programming",
+            content: "Dosen: Sata Lesmana, M.Kom. • Selesai dikerjakan sesuai Style 6",
+            date: new Date().toLocaleDateString("id-ID"),
+          },
+          {
+            id: "2",
+            title: "Status Akun Login",
+            content: "Berhasil masuk menggunakan sistem autentikasi lokal",
+            date: new Date().toLocaleDateString("id-ID"),
+          },
+        ];
+        setNotes(defaultNotes);
+        await AsyncStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(defaultNotes));
+      }
     } catch (e) {
       console.warn("Dashboard load error:", e);
     } finally {
@@ -82,11 +106,16 @@ export default function DashboardScreen() {
 
     setSavingNote(true);
     try {
-      const updated = await authService.addNote(
-        newNoteTitle.trim(),
-        newNoteContent.trim() || "-"
-      );
+      const newNote: NoteItem = {
+        id: String(Date.now()),
+        title: newNoteTitle.trim(),
+        content: newNoteContent.trim() || "-",
+        date: new Date().toLocaleDateString("id-ID"),
+      };
+      const updated = [newNote, ...notes];
       setNotes(updated);
+      await AsyncStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(updated));
+
       setNewNoteTitle("");
       setNewNoteContent("");
       setModalVisible(false);
@@ -105,8 +134,9 @@ export default function DashboardScreen() {
         text: "Hapus",
         style: "destructive",
         onPress: async () => {
-          const updated = await authService.deleteNote(id);
+          const updated = notes.filter((n) => n.id !== id);
           setNotes(updated);
+          await AsyncStorage.setItem(STORAGE_NOTES_KEY, JSON.stringify(updated));
         },
       },
     ]);
@@ -145,7 +175,7 @@ export default function DashboardScreen() {
               Halo, {user?.fullName || "Klaudius"}! 👋
             </Text>
             <Text style={styles.subGreetingText}>
-              Selamat datang di Dashboard Mahasiswa
+              Dashboard Utama • Role: {user?.role || "Mahasiswa"}
             </Text>
           </View>
 
@@ -154,24 +184,15 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Database Status Banner */}
-        <View
-          style={[
-            styles.statusBanner,
-            user?.source === "supabase"
-              ? styles.statusSupabase
-              : styles.statusLocal,
-          ]}
-        >
+        {/* Status Login Sukses Banner */}
+        <View style={styles.statusSuccessBanner}>
           <View style={styles.statusDot} />
-          <Text style={styles.statusBannerText}>
-            {user?.source === "supabase"
-              ? "🟢 Terhubung ke Supabase Cloud Database"
-              : "🟡 Mode Lokal / Offline Storage Aktif"}
+          <Text style={styles.statusSuccessBannerText}>
+            Status Login: Berhasil Masuk ({user?.username})
           </Text>
         </View>
 
-        {/* Identitas Mahasiswa (KETENTUAN UTAMA SOAL UTS) */}
+        {/* Identitas Mahasiswa (KETENTUAN UTAMA SOAL UTS DARI DOSEN) */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>🎓 Identitas Mahasiswa (UTS)</Text>
@@ -208,7 +229,7 @@ export default function DashboardScreen() {
           <View style={styles.tableRowLast}>
             <Text style={styles.tableLabel}>Akun Login Saat Ini</Text>
             <Text style={[styles.tableValue, { color: "#2B92E4" }]}>
-              {user?.email || "dekuizuku811@gmail.com"}
+              {user?.email || "klaudius@lp3i.ac.id"}
             </Text>
           </View>
         </View>
@@ -224,13 +245,13 @@ export default function DashboardScreen() {
           <View style={styles.statCard}>
             <Text style={styles.statEmoji}>⏱️</Text>
             <Text style={styles.statValue}>200 Menit</Text>
-            <Text style={styles.statLabel}>Waktu Ujian</Text>
+            <Text style={styles.statLabel}>Waktu UTS</Text>
           </View>
 
           <View style={styles.statCard}>
             <Text style={styles.statEmoji}>✅</Text>
             <Text style={styles.statValue}>Selesai</Text>
-            <Text style={styles.statLabel}>Status UTS</Text>
+            <Text style={styles.statLabel}>Status Modul</Text>
           </View>
         </View>
 
@@ -245,7 +266,7 @@ export default function DashboardScreen() {
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.scheduleSubject}>Mobile Programming</Text>
               <Text style={styles.scheduleDetail}>
-                Dosen: Sata Lesmana, M.Kom. • Lab Komputer 2
+                Dosen: Sata Lesmana, M.Kom. • Lab Komputer
               </Text>
             </View>
           </View>
@@ -264,7 +285,7 @@ export default function DashboardScreen() {
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.scheduleSubject}>Rekayasa Perangkat Lunak</Text>
               <Text style={styles.scheduleDetail}>
-                Teori & Praktik Basis Data • Ruang Teori 104
+                Praktikum Basis Data • Ruang Teori 104
               </Text>
             </View>
           </View>
@@ -291,7 +312,7 @@ export default function DashboardScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.noteTitle}>{item.title}</Text>
                   <Text style={styles.noteContent}>{item.content}</Text>
-                  <Text style={styles.noteDate}>{item.createdAt}</Text>
+                  <Text style={styles.noteDate}>{item.date}</Text>
                 </View>
                 <TouchableOpacity
                   onPress={() => handleDeleteNote(item.id)}
@@ -331,7 +352,7 @@ export default function DashboardScreen() {
 
             <TextInput
               style={styles.modalInput}
-              placeholder="Judul catatan (contoh: Link GitHub UTS)"
+              placeholder="Judul catatan"
               placeholderTextColor="#94A3B8"
               value={newNoteTitle}
               onChangeText={setNewNoteTitle}
@@ -391,7 +412,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 14,
   },
   greetingText: {
     fontSize: 20,
@@ -421,23 +442,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
   },
-  statusBanner: {
+  statusSuccessBanner: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 9,
     borderRadius: 10,
-    marginBottom: 16,
-  },
-  statusSupabase: {
+    marginBottom: 14,
     backgroundColor: "#ECFDF5",
     borderWidth: 1,
     borderColor: "#A7F3D0",
-  },
-  statusLocal: {
-    backgroundColor: "#FFFBEB",
-    borderWidth: 1,
-    borderColor: "#FDE68A",
   },
   statusDot: {
     width: 8,
@@ -446,9 +460,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#10B981",
     marginRight: 8,
   },
-  statusBannerText: {
+  statusSuccessBannerText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#065F46",
   },
   card: {

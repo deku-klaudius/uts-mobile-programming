@@ -14,12 +14,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { authService } from "../../lib/supabase";
+import { authService, DEFAULT_ACCOUNTS } from "../../lib/auth";
 
 export default function LoginScreen() {
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -28,9 +28,9 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     setErrorMessage(null);
 
-    const cleanEmail = email.trim();
-    if (!cleanEmail) {
-      setErrorMessage("Silahkan masukkan alamat email anda.");
+    const cleanId = identifier.trim();
+    if (!cleanId) {
+      setErrorMessage("Silahkan masukkan username atau email anda.");
       return;
     }
     if (!password) {
@@ -40,15 +40,11 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const res = await authService.login({
-        email: cleanEmail,
-        password,
-      });
-
+      const user = await authService.login(cleanId, password);
       // Berhasil login
       router.replace("/dashboard");
     } catch (err: any) {
-      const msg = err.message || "Gagal masuk. Periksa kembali email dan password anda.";
+      const msg = err.message || "Gagal masuk. Periksa kembali username dan password.";
       setErrorMessage(msg);
       Alert.alert("Gagal Masuk", msg);
     } finally {
@@ -56,10 +52,16 @@ export default function LoginScreen() {
     }
   };
 
+  const handleSelectDemoAccount = (username: string, pass: string) => {
+    setIdentifier(username);
+    setPassword(pass);
+    setErrorMessage(null);
+  };
+
   const handleForgotPassword = () => {
     Alert.alert(
       "Lupa Password",
-      "Untuk reset password, silakan hubungi pengelola akun atau daftarkan akun baru.",
+      "Akun siap pakai:\n• klaudius (pass: 123456)\n• dosen (pass: 123456)\n• admin (pass: 123456)",
       [{ text: "Mengerti" }]
     );
   };
@@ -67,8 +69,14 @@ export default function LoginScreen() {
   const handleSocialLogin = (platform: "Google" | "Facebook") => {
     Alert.alert(
       `Login dengan ${platform}`,
-      `Fitur masuk menggunakan ${platform} siap dihubungkan dengan OAuth Supabase.`,
-      [{ text: "Tutup" }]
+      `Fitur masuk via ${platform} (Simulasi Login Cepat)`,
+      [
+        {
+          text: "Masuk sebagai Mahasiswa",
+          onPress: () => handleSelectDemoAccount("klaudius", "123456"),
+        },
+        { text: "Batal", style: "cancel" },
+      ]
     );
   };
 
@@ -97,13 +105,42 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* Illustration Card */}
+          {/* Illustration Card (Style 6) */}
           <View style={styles.illustrationCard}>
             <Image
               source={require("../../assets/images/illustrations/login-partnership.png")}
               style={styles.illustrationImage}
               resizeMode="contain"
             />
+          </View>
+
+          {/* Quick Demo Accounts Helper */}
+          <View style={styles.demoHelperCard}>
+            <Text style={styles.demoHelperTitle}>
+              💡 Akun Siap Pakai (Tap untuk Isi Otomatis):
+            </Text>
+            <View style={styles.demoChipsRow}>
+              {DEFAULT_ACCOUNTS.map((acc) => (
+                <TouchableOpacity
+                  key={acc.id}
+                  style={[
+                    styles.demoChip,
+                    identifier === acc.username && styles.demoChipActive,
+                  ]}
+                  onPress={() => handleSelectDemoAccount(acc.username, acc.password)}
+                  activeOpacity={0.75}
+                >
+                  <Text
+                    style={[
+                      styles.demoChipText,
+                      identifier === acc.username && styles.demoChipTextActive,
+                    ]}
+                  >
+                    {acc.role}: {acc.username}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           {/* Form Inputs */}
@@ -114,20 +151,19 @@ export default function LoginScreen() {
               </View>
             ) : null}
 
-            {/* Email Field */}
+            {/* Email / Username Field */}
             <View style={styles.inputWrapper}>
               <TextInput
                 style={styles.input}
-                placeholder="Email"
+                placeholder="Email atau Username (cth: klaudius)"
                 placeholderTextColor="#94A3B8"
-                value={email}
+                value={identifier}
                 onChangeText={(t) => {
-                  setEmail(t);
+                  setIdentifier(t);
                   if (errorMessage) setErrorMessage(null);
                 }}
                 autoCapitalize="none"
-                keyboardType="email-address"
-                autoComplete="email"
+                autoComplete="username"
               />
             </View>
 
@@ -135,7 +171,7 @@ export default function LoginScreen() {
             <View style={styles.passwordInputWrapper}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Password"
+                placeholder="Password (cth: 123456)"
                 placeholderTextColor="#94A3B8"
                 value={password}
                 onChangeText={(t) => {
@@ -161,7 +197,7 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Masuk Button */}
+            {/* Masuk Button (Style 6) */}
             <TouchableOpacity
               style={[styles.primaryButton, loading && styles.buttonDisabled]}
               onPress={handleLogin}
@@ -205,7 +241,7 @@ export default function LoginScreen() {
               </View>
             </TouchableOpacity>
 
-            {/* Footer: Belum punya akun? Mendaftar sekarang */}
+            {/* Footer */}
             <View style={styles.footerRow}>
               <Text style={styles.footerNormalText}>Belum punya akun? </Text>
               <TouchableOpacity
@@ -237,7 +273,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   backButton: {
     paddingVertical: 6,
@@ -266,24 +302,63 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#F8FAFC",
     borderRadius: 24,
-    paddingVertical: 20,
-    marginVertical: 12,
+    paddingVertical: 16,
+    marginVertical: 10,
     borderWidth: 1,
     borderColor: "#F1F5F9",
   },
   illustrationImage: {
-    width: 170,
-    height: 160,
+    width: 160,
+    height: 150,
+  },
+  demoHelperCard: {
+    backgroundColor: "#F0F9FF",
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#BAE6FD",
+  },
+  demoHelperTitle: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#0369A1",
+    marginBottom: 6,
+  },
+  demoChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  demoChip: {
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#7DD3FC",
+  },
+  demoChipActive: {
+    backgroundColor: "#2B92E4",
+    borderColor: "#2B92E4",
+  },
+  demoChipText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#0284C7",
+  },
+  demoChipTextActive: {
+    color: "#FFFFFF",
   },
   formContainer: {
-    marginTop: 8,
+    marginTop: 4,
   },
   errorBanner: {
     backgroundColor: "#FEF2F2",
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    marginBottom: 14,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: "#FECACA",
   },
@@ -296,12 +371,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#CBD5E1",
     borderRadius: 12,
-    marginBottom: 14,
+    marginBottom: 12,
     backgroundColor: "#FFFFFF",
   },
   input: {
     paddingHorizontal: 16,
-    paddingVertical: 13,
+    paddingVertical: 12,
     fontSize: 14,
     color: "#1E293B",
   },
@@ -311,13 +386,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#CBD5E1",
     borderRadius: 12,
-    marginBottom: 10,
+    marginBottom: 8,
     backgroundColor: "#FFFFFF",
   },
   passwordInput: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingVertical: 13,
+    paddingVertical: 12,
     fontSize: 14,
     color: "#1E293B",
   },
@@ -331,7 +406,7 @@ const styles = StyleSheet.create({
   },
   forgotPasswordContainer: {
     alignItems: "flex-end",
-    marginBottom: 20,
+    marginBottom: 18,
   },
   forgotPasswordText: {
     fontSize: 12,
@@ -362,7 +437,7 @@ const styles = StyleSheet.create({
   dividerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 18,
+    marginVertical: 16,
   },
   dividerLine: {
     flex: 1,
@@ -380,10 +455,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EA4335",
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: 11,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   socialContent: {
     flexDirection: "row",
@@ -406,10 +481,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#1877F2",
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: 11,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: 18,
   },
   facebookLogo: {
     fontSize: 16,
@@ -426,7 +501,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: 2,
   },
   footerNormalText: {
     fontSize: 13,

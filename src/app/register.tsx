@@ -14,13 +14,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { authService } from "../../lib/supabase";
+import { authService } from "../../lib/auth";
 
 export default function RegisterScreen() {
   const router = useRouter();
 
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
+  const [emailOrUsername, setEmailOrUsername] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,19 +34,15 @@ export default function RegisterScreen() {
     setErrorMessage(null);
 
     const cleanName = fullName.trim();
-    const cleanEmail = email.trim();
+    const cleanIdentifier = emailOrUsername.trim();
     const cleanPhone = phone.trim();
 
     if (!cleanName) {
       setErrorMessage("Silahkan masukkan nama lengkap anda.");
       return;
     }
-    if (!cleanEmail) {
-      setErrorMessage("Silahkan masukkan alamat email anda.");
-      return;
-    }
-    if (!cleanEmail.includes("@") || !cleanEmail.includes(".")) {
-      setErrorMessage("Format email tidak valid.");
+    if (!cleanIdentifier) {
+      setErrorMessage("Silahkan masukkan email atau username anda.");
       return;
     }
     if (!cleanPhone) {
@@ -68,9 +64,9 @@ export default function RegisterScreen() {
 
     setLoading(true);
     try {
-      const res = await authService.register({
+      const newUser = await authService.register({
         fullName: cleanName,
-        email: cleanEmail,
+        emailOrUsername: cleanIdentifier,
         phone: cleanPhone,
         password,
       });
@@ -79,9 +75,9 @@ export default function RegisterScreen() {
       router.push({
         pathname: "/success",
         params: {
-          fullName: cleanName,
-          email: cleanEmail,
-          isFallback: String(res.isFallback),
+          fullName: newUser.fullName,
+          username: newUser.username,
+          email: newUser.email,
         },
       });
     } catch (err: any) {
@@ -96,7 +92,7 @@ export default function RegisterScreen() {
   const handleSocialRegister = (platform: "Google" | "Facebook") => {
     Alert.alert(
       `Daftar dengan ${platform}`,
-      `Fitur pendaftaran instan menggunakan ${platform} siap dihubungkan ke Supabase Auth.`,
+      `Pendaftaran cepat via ${platform} berhasil disimulasikan.`,
       [{ text: "Tutup" }]
     );
   };
@@ -126,7 +122,7 @@ export default function RegisterScreen() {
             </View>
           </View>
 
-          {/* Illustration Section */}
+          {/* Illustration Section (Style 6) */}
           <View style={styles.illustrationCard}>
             <Image
               source={require("../../assets/images/illustrations/register-scooter.png")}
@@ -158,19 +154,18 @@ export default function RegisterScreen() {
               />
             </View>
 
-            {/* Email */}
+            {/* Email / Username */}
             <View style={styles.inputWrapper}>
               <TextInput
                 style={styles.input}
-                placeholder="Email"
+                placeholder="Email atau Username"
                 placeholderTextColor="#94A3B8"
-                value={email}
+                value={emailOrUsername}
                 onChangeText={(t) => {
-                  setEmail(t);
+                  setEmailOrUsername(t);
                   if (errorMessage) setErrorMessage(null);
                 }}
                 autoCapitalize="none"
-                keyboardType="email-address"
               />
             </View>
 
@@ -193,7 +188,7 @@ export default function RegisterScreen() {
             <View style={styles.passwordInputWrapper}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Password"
+                placeholder="Password (min. 6 karakter)"
                 placeholderTextColor="#94A3B8"
                 value={password}
                 onChangeText={(t) => {
@@ -279,7 +274,7 @@ export default function RegisterScreen() {
               </View>
             </TouchableOpacity>
 
-            {/* Footer: Sudah punya akun? silahkan masuk */}
+            {/* Footer */}
             <View style={styles.footerRow}>
               <Text style={styles.footerNormalText}>Sudah punya akun? silahkan </Text>
               <TouchableOpacity
@@ -338,14 +333,14 @@ const styles = StyleSheet.create({
   illustrationCard: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
   illustrationImage: {
-    width: 200,
-    height: 130,
+    width: 190,
+    height: 125,
   },
   formContainer: {
-    marginTop: 6,
+    marginTop: 4,
   },
   errorBanner: {
     backgroundColor: "#FEF2F2",
@@ -365,12 +360,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#CBD5E1",
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 10,
     backgroundColor: "#FFFFFF",
   },
   input: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 11,
     fontSize: 14,
     color: "#1E293B",
   },
@@ -380,13 +375,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#CBD5E1",
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 10,
     backgroundColor: "#FFFFFF",
   },
   passwordInput: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 11,
     fontSize: 14,
     color: "#1E293B",
   },
@@ -404,7 +399,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 6,
+    marginTop: 4,
     shadowColor: "#2B92E4",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -423,7 +418,7 @@ const styles = StyleSheet.create({
   dividerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 16,
+    marginVertical: 14,
   },
   dividerLine: {
     flex: 1,

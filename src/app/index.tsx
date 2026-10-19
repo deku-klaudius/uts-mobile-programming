@@ -10,12 +10,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { authService, UserData } from "../../lib/supabase";
+import { authService, UserAccount } from "../../lib/auth";
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [activeUser, setActiveUser] = useState<UserData | null>(null);
+  const [activeUser, setActiveUser] = useState<UserAccount | null>(null);
 
   useEffect(() => {
     checkSession();
@@ -43,7 +43,7 @@ export default function WelcomeScreen() {
         {/* Top Header Badge */}
         <View style={styles.topBadgeContainer}>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>UTS Mobile Programming 2026</Text>
+            <Text style={styles.badgeText}>UTS Mobile Programming • LP3I</Text>
           </View>
         </View>
 
@@ -58,12 +58,12 @@ export default function WelcomeScreen() {
 
         {/* Title & Subtitle */}
         <View style={styles.contentSection}>
-          <Text style={styles.mainTitle}>Sistem Autentikasi Mahasiswa</Text>
+          <Text style={styles.mainTitle}>Sistem Login & Registrasi</Text>
           <Text style={styles.subtitle}>
-            Aplikasi Login & Registrasi Terintegrasi Supabase Cloud Database & Local Storage Fallback
+            Aplikasi Berfokus pada Module Login & Registrasi Berdasarkan Template Figma Style 6
           </Text>
 
-          {/* Student Identity Card */}
+          {/* Student Identity Card Sesuai Soal UTS */}
           <View style={styles.studentCard}>
             <View style={styles.studentCardHeader}>
               <View style={styles.avatarMini}>
@@ -95,14 +95,14 @@ export default function WelcomeScreen() {
           </View>
         </View>
 
-        {/* Active Session Prompt or Action Buttons */}
+        {/* Actions */}
         <View style={styles.actionContainer}>
           {loading ? (
             <ActivityIndicator size="small" color="#2B92E4" style={{ marginVertical: 20 }} />
           ) : activeUser ? (
             <View style={styles.sessionBox}>
               <Text style={styles.sessionText}>
-                Sesi aktif terdeteksi: <Text style={{ fontWeight: "700" }}>{activeUser.fullName}</Text>
+                Sesi aktif: <Text style={{ fontWeight: "700" }}>{activeUser.fullName}</Text>
               </Text>
               <TouchableOpacity
                 style={styles.primaryButton}
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   },
   topBadgeContainer: {
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 6,
   },
   badge: {
     backgroundColor: "#E8F4FD",
@@ -170,34 +170,34 @@ const styles = StyleSheet.create({
   badgeText: {
     color: "#1877F2",
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   illustrationWrapper: {
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 18,
+    marginVertical: 14,
   },
   heroImage: {
-    width: 220,
-    height: 190,
+    width: 210,
+    height: 180,
   },
   contentSection: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   mainTitle: {
     fontSize: 22,
     fontWeight: "800",
     color: "#1E293B",
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
     fontSize: 13,
     color: "#64748B",
     textAlign: "center",
-    lineHeight: 19,
-    marginBottom: 18,
-    paddingHorizontal: 10,
+    lineHeight: 18,
+    marginBottom: 16,
+    paddingHorizontal: 8,
   },
   studentCard: {
     backgroundColor: "#F8FAFC",
@@ -211,9 +211,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   avatarMini: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: "#2B92E4",
     alignItems: "center",
     justifyContent: "center",
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#2B92E4",
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 10,
   },
   styleBadgeText: {
     color: "#FFFFFF",
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   },
   actionContainer: {
     marginTop: "auto",
-    paddingTop: 10,
+    paddingTop: 8,
   },
   sessionBox: {
     alignItems: "center",
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   sessionText: {
     fontSize: 13,
     color: "#475569",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   buttonGroup: {
     gap: 12,
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   textButton: {
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   textButtonLabel: {
     color: "#64748B",
