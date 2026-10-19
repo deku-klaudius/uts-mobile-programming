@@ -192,6 +192,32 @@ export default function DashboardScreen() {
           </Text>
         </View>
 
+        {/* Ucapan Spesial untuk Dosen Pengampu */}
+        <View style={styles.lecturerAppreciationCard}>
+          <View style={styles.lecturerCardHeader}>
+            <Text style={styles.lecturerCardEmoji}>💐</Text>
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={styles.lecturerCardTitle}>
+                Apresiasi & Ucapan untuk Dosen Pengampu
+              </Text>
+              <Text style={styles.lecturerCardSubtitle}>
+                Bapak Sata Lesmana, M.Kom.
+              </Text>
+            </View>
+            <View style={styles.badgeSuccessSmall}>
+              <Text style={styles.badgeSuccessSmallText}>UTS 2026/2027</Text>
+            </View>
+          </View>
+          <View style={styles.lecturerCardBody}>
+            <Text style={styles.lecturerCardMessage}>
+              "Selamat dan terima kasih banyak kepada Bapak Sata Lesmana, M.Kom. atas bimbingan, dedikasi, serta ilmu yang sangat bermanfaat dalam mata kuliah Mobile Programming semester ini. Semoga Bapak senantiasa diberikan kesehatan, kelancaran rezeki, dan kesuksesan selalu!"
+            </Text>
+            <Text style={styles.lecturerCardSender}>
+              — Hormat saya, Klaudius Oe Naimnou (NIM: 240444020010)
+            </Text>
+          </View>
+        </View>
+
         {/* Identitas Mahasiswa (KETENTUAN UTAMA SOAL UTS DARI DOSEN) */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
@@ -464,6 +490,71 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: "#065F46",
+  },
+  lecturerAppreciationCard: {
+    backgroundColor: "#F0FDF4",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: "#86EFAC",
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  lecturerCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  lecturerCardEmoji: {
+    fontSize: 26,
+  },
+  lecturerCardTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#166534",
+  },
+  lecturerCardSubtitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#15803D",
+    marginTop: 1,
+  },
+  badgeSuccessSmall: {
+    backgroundColor: "#DCFCE7",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#BBF7D0",
+  },
+  badgeSuccessSmallText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#166534",
+  },
+  lecturerCardBody: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#BBF7D0",
+  },
+  lecturerCardMessage: {
+    fontSize: 13,
+    fontStyle: "italic",
+    lineHeight: 19,
+    color: "#1E293B",
+  },
+  lecturerCardSender: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#15803D",
+    textAlign: "right",
+    marginTop: 8,
   },
   card: {
     backgroundColor: "#FFFFFF",
