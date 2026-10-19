@@ -1,56 +1,107 @@
-# Welcome to your Expo app 👋
+# UTS Mobile Programming - Sistem Login & Register (React Native + Expo + Supabase)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Tugas Ujian Tengah Semester (UTS) Tahun Ajaran 2026/2027  
+**Lembaga Pendidikan dan Pengembangan Profesi Indonesia (LP3I)**  
+**Mata Kuliah:** Mobile Programming  
+**Dosen Pengampu:** Sata Lesmana, M.Kom.  
 
-## Get started
+---
 
-1. Install dependencies
+## 👨‍🎓 Identitas Mahasiswa
+* **Nama Lengkap:** Klaudius Oe Naimnou
+* **NIM:** 240444020010
+* **Kelas:** Informatika Komputer (IK-24)
+* **Semester / SKS:** I / 4 SKS
+* **Pilihan UI Desain:** **Style 6** (Tercatat di Spreadsheet & Figma)
+* **Akun GitHub:** dekuizuku811@gmail.com / [deku-klaudius](https://github.com/deku-klaudius)
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+## 📱 Daftar Halaman / Screen Aplikasi (Sesuai Ketentuan Soal)
 
-   ```bash
-   npx expo start
-   ```
+1. **Welcome Page / Splash Screen (`src/app/index.tsx`)**
+   * Menampilkan ilustrasi sambutan (Gadis mengendarai vespa mint).
+   * Kartu identitas mahasiswa (Nama, NIM, Kelas, Mata Kuliah, Dosen).
+   * Tombol navigasi menuju **Login** dan **Register**.
+   * Pengecekan otomatis sesi aktif (bisa langsung masuk dashboard jika sudah login).
 
-In the output, you'll find options to open the app in a
+2. **Login Page (`src/app/login.tsx`) - Sesuai Figma Style 6**
+   * Ilustrasi dua pebisnis berjabat tangan dalam card rounded.
+   * Input Email & Input Password dengan tombol toggle tampil/sembunyikan password (👁).
+   * Tombol "Lupa password?".
+   * Tombol utama **MASUK** warna biru (`#2B92E4`) dengan indikator loading.
+   * Pemisah *"Atau masuk menggunakan"*.
+   * Tombol login sosial media (Google & Facebook).
+   * Tautan pendaftaran *"Belum punya akun? Mendaftar sekarang"*.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+3. **Register Page (`src/app/register.tsx`) - Sesuai Figma Style 6**
+   * Ilustrasi gadis bersandar di vespa merah.
+   * Input form lengkap:
+     * Nama Lengkap
+     * Email
+     * Nomor HP
+     * Password (dengan eye toggle)
+     * Konfirmasi Password (dengan eye toggle)
+   * Validasi form lengkap (format email, panjang password min. 6 karakter, kecocokan password).
+   * Tombol utama **MENDAFTAR** warna biru.
+   * Pemisah *"Atau daftar menggunakan"*.
+   * Tombol sosial Google & Facebook.
+   * Tautan *"Sudah punya akun? silahkan masuk"*.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+4. **Success / Verification Notice Page (`src/app/success.tsx`) - Layar Kiri Figma Style 6**
+   * Ilustrasi vespa mint.
+   * Judul: **SELAMAT! ANDA SUDAH BERHASIL MENDAFTAR**.
+   * Teks: *"Silahkan periksa email anda untuk melakukan verifikasi sebelum melakukan Login."*
+   * Rincian data akun yang baru saja didaftarkan.
+   * Tombol **LANJUTKAN** menuju halaman login.
 
-## Get a fresh project
+5. **Main Page / Dashboard (`src/app/dashboard.tsx`) - Sesuai Ketentuan Soal UTS**
+   * Header sapaan personal: *"Halo, [Nama Pengguna]! 👋"*.
+   * **Informasi Lengkap Nama dan Kelas Mahasiswa**:
+     * Nama: Klaudius Oe Naimnou
+     * NIM: 240444020010
+     * Kelas: Informatika Komputer (IK-24)
+     * Dosen: Sata Lesmana, M.Kom.
+   * Status Koneksi Database (Supabase Cloud / Local Offline Fallback Mode).
+   * Ringkasan Akademik (Beban SKS, Waktu Ujian, Status Tugas).
+   * Jadwal Kuliah Hari Ini.
+   * **Fitur Interaktif Catatan Cepat (Quick Notes)**: Mahasiswa dapat menambah, melihat, dan menghapus catatan (tersimpan permanen di `AsyncStorage`).
+   * Tombol **Keluar / Logout Akun** dengan dialog konfirmasi.
 
-When you're ready, run:
+---
 
+## 🛠️ Arsitektur & Teknologi
+
+* **Framework:** React Native + Expo (Expo Router v57)
+* **Language:** TypeScript
+* **State & Storage:**
+  * `@supabase/supabase-js` (Autentikasi Cloud & Database).
+  * `@react-native-async-storage/async-storage` (Penyimpanan Sesi & Offline Fallback).
+* **Fail-Safe Mechanism:**
+  * Aplikasi dirancang tahan gangguan jaringan/DNS. Jika kredensial Supabase aktif, otentikasi diarahkan ke Supabase Cloud. Jika offline atau proyek Supabase terhenti, aplikasi otomatis beralih ke cache lokal tanpa error atau force close.
+
+---
+
+## 🚀 Cara Menjalankan Aplikasi
+
+### 1. Jalankan di Web Browser (Rekomendasi Cepat & Stabil):
 ```bash
-npm run reset-project
+npx expo start --web
+```
+Buka browser di `http://localhost:8081`.
+
+### 2. Jalankan di Expo Go (HP Android / iOS):
+```bash
+npx expo start
+```
+Scan QR code yang muncul menggunakan aplikasi **Expo Go**.
+
+---
+
+## 🔐 Konfigurasi Supabase (`.env`)
+```env
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+*Dibuat oleh Klaudius Oe Naimnou (240444020010) untuk Ujian Tengah Semester (UTS) Mobile Programming 2026/2027.*
