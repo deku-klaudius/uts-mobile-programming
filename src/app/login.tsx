@@ -14,13 +14,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { authService, DEFAULT_ACCOUNTS } from "../../lib/auth";
+import { authService } from "../../lib/auth";
 
 export default function LoginScreen() {
   const router = useRouter();
 
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
+  // Langsung terisi fix admin@gmail.com dan test123
+  const [identifier, setIdentifier] = useState("admin@gmail.com");
+  const [password, setPassword] = useState("test123");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -40,8 +41,8 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const user = await authService.login(cleanId, password);
-      // Berhasil login
+      await authService.login(cleanId, password);
+      // Langsung masuk ke Dashboard
       router.replace("/dashboard");
     } catch (err: any) {
       const msg = err.message || "Gagal masuk. Periksa kembali username dan password.";
@@ -52,32 +53,17 @@ export default function LoginScreen() {
     }
   };
 
-  const handleSelectDemoAccount = (username: string, pass: string) => {
-    setIdentifier(username);
-    setPassword(pass);
-    setErrorMessage(null);
-  };
-
   const handleForgotPassword = () => {
     Alert.alert(
-      "Lupa Password",
-      "Akun siap pakai:\n• klaudius (pass: 123456)\n• dosen (pass: 123456)\n• admin (pass: 123456)",
+      "Informasi Login",
+      "Akun Login Utama:\n• Username/Email: admin@gmail.com\n• Password: test123",
       [{ text: "Mengerti" }]
     );
   };
 
   const handleSocialLogin = (platform: "Google" | "Facebook") => {
-    Alert.alert(
-      `Login dengan ${platform}`,
-      `Fitur masuk via ${platform} (Simulasi Login Cepat)`,
-      [
-        {
-          text: "Masuk sebagai Mahasiswa",
-          onPress: () => handleSelectDemoAccount("klaudius", "123456"),
-        },
-        { text: "Batal", style: "cancel" },
-      ]
-    );
+    // Quick login via social simulation
+    handleLogin();
   };
 
   return (
@@ -114,35 +100,6 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Quick Demo Accounts Helper */}
-          <View style={styles.demoHelperCard}>
-            <Text style={styles.demoHelperTitle}>
-              💡 Akun Siap Pakai (Tap untuk Isi Otomatis):
-            </Text>
-            <View style={styles.demoChipsRow}>
-              {DEFAULT_ACCOUNTS.map((acc) => (
-                <TouchableOpacity
-                  key={acc.id}
-                  style={[
-                    styles.demoChip,
-                    identifier === acc.username && styles.demoChipActive,
-                  ]}
-                  onPress={() => handleSelectDemoAccount(acc.username, acc.password)}
-                  activeOpacity={0.75}
-                >
-                  <Text
-                    style={[
-                      styles.demoChipText,
-                      identifier === acc.username && styles.demoChipTextActive,
-                    ]}
-                  >
-                    {acc.role}: {acc.username}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
           {/* Form Inputs */}
           <View style={styles.formContainer}>
             {errorMessage ? (
@@ -151,11 +108,11 @@ export default function LoginScreen() {
               </View>
             ) : null}
 
-            {/* Email / Username Field */}
+            {/* Email / Username Field (Sudah terisi langsung) */}
             <View style={styles.inputWrapper}>
               <TextInput
                 style={styles.input}
-                placeholder="Email atau Username (cth: klaudius)"
+                placeholder="Email atau Username"
                 placeholderTextColor="#94A3B8"
                 value={identifier}
                 onChangeText={(t) => {
@@ -163,15 +120,14 @@ export default function LoginScreen() {
                   if (errorMessage) setErrorMessage(null);
                 }}
                 autoCapitalize="none"
-                autoComplete="username"
               />
             </View>
 
-            {/* Password Field with Eye Toggle */}
+            {/* Password Field with Eye Toggle (Sudah terisi langsung) */}
             <View style={styles.passwordInputWrapper}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Password (cth: 123456)"
+                placeholder="Password"
                 placeholderTextColor="#94A3B8"
                 value={password}
                 onChangeText={(t) => {
@@ -302,56 +258,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#F8FAFC",
     borderRadius: 24,
-    paddingVertical: 16,
-    marginVertical: 10,
+    paddingVertical: 18,
+    marginVertical: 12,
     borderWidth: 1,
     borderColor: "#F1F5F9",
   },
   illustrationImage: {
-    width: 160,
-    height: 150,
-  },
-  demoHelperCard: {
-    backgroundColor: "#F0F9FF",
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: "#BAE6FD",
-  },
-  demoHelperTitle: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#0369A1",
-    marginBottom: 6,
-  },
-  demoChipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  demoChip: {
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#7DD3FC",
-  },
-  demoChipActive: {
-    backgroundColor: "#2B92E4",
-    borderColor: "#2B92E4",
-  },
-  demoChipText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#0284C7",
-  },
-  demoChipTextActive: {
-    color: "#FFFFFF",
+    width: 170,
+    height: 160,
   },
   formContainer: {
-    marginTop: 4,
+    marginTop: 6,
   },
   errorBanner: {
     backgroundColor: "#FEF2F2",
@@ -376,7 +293,7 @@ const styles = StyleSheet.create({
   },
   input: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 13,
     fontSize: 14,
     color: "#1E293B",
   },
@@ -392,7 +309,7 @@ const styles = StyleSheet.create({
   passwordInput: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 13,
     fontSize: 14,
     color: "#1E293B",
   },
@@ -455,10 +372,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EA4335",
     borderRadius: 12,
-    paddingVertical: 11,
+    paddingVertical: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   socialContent: {
     flexDirection: "row",
@@ -481,10 +398,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#1877F2",
     borderRadius: 12,
-    paddingVertical: 11,
+    paddingVertical: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 18,
+    marginBottom: 20,
   },
   facebookLogo: {
     fontSize: 16,

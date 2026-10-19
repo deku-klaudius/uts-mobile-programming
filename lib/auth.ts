@@ -12,10 +12,21 @@ export interface UserAccount {
   password: string;
 }
 
-// Akun Bawaan (Default Accounts) yang langsung bisa dipakai login
+// Akun Utama yang langsung FIX bisa masuk
 export const DEFAULT_ACCOUNTS: UserAccount[] = [
   {
-    id: 'user_1',
+    id: 'user_main',
+    username: 'admin@gmail.com',
+    email: 'admin@gmail.com',
+    fullName: 'Klaudius Oe Naimnou',
+    phone: '081234567890',
+    role: 'Mahasiswa',
+    nimOrNidn: '240444020010',
+    className: 'Informatika Komputer (IK-24)',
+    password: 'test123',
+  },
+  {
+    id: 'user_klaudius',
     username: 'klaudius',
     email: 'klaudius@lp3i.ac.id',
     fullName: 'Klaudius Oe Naimnou',
@@ -23,38 +34,16 @@ export const DEFAULT_ACCOUNTS: UserAccount[] = [
     role: 'Mahasiswa',
     nimOrNidn: '240444020010',
     className: 'Informatika Komputer (IK-24)',
-    password: '123456',
-  },
-  {
-    id: 'user_2',
-    username: 'dosen',
-    email: 'sata@lp3i.ac.id',
-    fullName: 'Sata Lesmana, M.Kom.',
-    phone: '081987654321',
-    role: 'Dosen',
-    nimOrNidn: 'NIDN: 0423088901',
-    className: 'Dosen Mobile Programming',
-    password: '123456',
-  },
-  {
-    id: 'user_3',
-    username: 'admin',
-    email: 'admin@lp3i.ac.id',
-    fullName: 'Admin Akademik LP3I',
-    phone: '081122334455',
-    role: 'Admin',
-    nimOrNidn: 'ADM-01',
-    className: 'Bagian Akademik',
-    password: '123456',
+    password: 'test123',
   },
 ];
 
-const STORAGE_USERS_KEY = '@uts_users_list_v2';
-const STORAGE_ACTIVE_SESSION = '@uts_session_user_v2';
+const STORAGE_USERS_KEY = '@uts_users_list_v3';
+const STORAGE_ACTIVE_SESSION = '@uts_session_user_v3';
 
 export const authService = {
   /**
-   * Mengambil semua daftar akun (akun default + akun yang baru didaftarkan)
+   * Mengambil semua daftar akun
    */
   async getAllUsers(): Promise<UserAccount[]> {
     try {
@@ -64,6 +53,14 @@ export const authService = {
         return DEFAULT_ACCOUNTS;
       }
       const parsed: UserAccount[] = JSON.parse(raw);
+      // Pastikan admin@gmail.com selalu tersedia
+      const hasMain = parsed.some(
+        (u) => u.email.toLowerCase() === 'admin@gmail.com' && u.password === 'test123'
+      );
+      if (!hasMain) {
+        parsed.unshift(DEFAULT_ACCOUNTS[0]);
+        await AsyncStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(parsed));
+      }
       return parsed;
     } catch {
       return DEFAULT_ACCOUNTS;
@@ -84,7 +81,6 @@ export const authService = {
 
     const users = await this.getAllUsers();
 
-    // Cek apakah email/username sudah pernah didaftarkan
     const exists = users.find(
       (u) =>
         u.email.toLowerCase() === cleanIdentifier ||
@@ -114,11 +110,21 @@ export const authService = {
   },
 
   /**
-   * Login pengguna (bisa menggunakan Username ATAU Email)
+   * Login pengguna (admin@gmail.com / test123 dijamin FIX langsung masuk)
    */
   async login(identifier: string, password: string): Promise<UserAccount> {
     const cleanId = identifier.trim().toLowerCase();
     const cleanPass = password.trim();
+
+    // Jalur langsung fix untuk admin@gmail.com / test123
+    if (
+      (cleanId === 'admin@gmail.com' || cleanId === 'admin') &&
+      cleanPass === 'test123'
+    ) {
+      const mainAcc = DEFAULT_ACCOUNTS[0];
+      await AsyncStorage.setItem(STORAGE_ACTIVE_SESSION, JSON.stringify(mainAcc));
+      return mainAcc;
+    }
 
     const users = await this.getAllUsers();
 
