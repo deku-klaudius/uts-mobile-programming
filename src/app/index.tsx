@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   StyleSheet,
   Text,
@@ -6,32 +6,15 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { authService, UserAccount } from "../../lib/auth";
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [activeUser, setActiveUser] = useState<UserAccount | null>(null);
 
-  useEffect(() => {
-    checkSession();
-  }, []);
-
-  const checkSession = async () => {
-    try {
-      const user = await authService.getActiveSession();
-      if (user) {
-        setActiveUser(user);
-      }
-    } catch (e) {
-      console.warn("Session check error:", e);
-    } finally {
-      setLoading(false);
-    }
+  const handleContinue = () => {
+    router.push("/login");
   };
 
   return (
@@ -40,104 +23,40 @@ export default function WelcomeScreen() {
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Header Badge */}
-        <View style={styles.topBadgeContainer}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>UTS Mobile Programming • LP3I</Text>
-          </View>
-        </View>
+        <View style={styles.topSpace} />
 
-        {/* Hero Illustration */}
-        <View style={styles.illustrationWrapper}>
+        {/* Illustration Section (Exact Style 6) */}
+        <View style={styles.illustrationSection}>
           <Image
             source={require("../../assets/images/illustrations/welcome-scooter.png")}
-            style={styles.heroImage}
+            style={styles.illustrationImage}
             resizeMode="contain"
           />
         </View>
 
-        {/* Title & Subtitle */}
+        {/* Text Section (Exact copy from Figma Style 6) */}
         <View style={styles.contentSection}>
-          <Text style={styles.mainTitle}>Sistem Login & Registrasi</Text>
-          <Text style={styles.subtitle}>
-            Aplikasi Berfokus pada Module Login & Registrasi Berdasarkan Template Figma Style 6
+          <Text style={styles.headlineTop}>SELAMAT!</Text>
+          <Text style={styles.headlineBottom}>ANDA SUDAH BERHASIL MENDAFTAR</Text>
+
+          <Text style={styles.description}>
+            Silahkan periksa email anda untuk melakukan verifikasi sebelum melakukan Login.
           </Text>
-
-          {/* Student Identity Card Sesuai Soal UTS */}
-          <View style={styles.studentCard}>
-            <View style={styles.studentCardHeader}>
-              <View style={styles.avatarMini}>
-                <Text style={styles.avatarMiniText}>KO</Text>
-              </View>
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.studentName}>Klaudius Oe Naimnou</Text>
-                <Text style={styles.studentNim}>NIM: 240444020010</Text>
-              </View>
-              <View style={styles.styleBadge}>
-                <Text style={styles.styleBadgeText}>Style 6</Text>
-              </View>
-            </View>
-
-            <View style={styles.studentDivider} />
-
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Mata Kuliah:</Text>
-              <Text style={styles.metaValue}>Mobile Programming</Text>
-            </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Dosen Pengampu:</Text>
-              <Text style={styles.metaValue}>Sata Lesmana, M.Kom.</Text>
-            </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Program / Kelas:</Text>
-              <Text style={styles.metaValue}>Informatika Komputer (IK-24)</Text>
-            </View>
-          </View>
         </View>
 
-        {/* Actions */}
-        <View style={styles.actionContainer}>
-          {loading ? (
-            <ActivityIndicator size="small" color="#2B92E4" style={{ marginVertical: 20 }} />
-          ) : activeUser ? (
-            <View style={styles.sessionBox}>
-              <Text style={styles.sessionText}>
-                Sesi aktif: <Text style={{ fontWeight: "700" }}>{activeUser.fullName}</Text>
-              </Text>
-              <TouchableOpacity
-                style={styles.primaryButton}
-                activeOpacity={0.85}
-                onPress={() => router.push("/dashboard")}
-              >
-                <Text style={styles.primaryButtonText}>Lanjut ke Dashboard</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.textButton}
-                activeOpacity={0.7}
-                onPress={() => router.push("/login")}
-              >
-                <Text style={styles.textButtonLabel}>Ganti Akun / Login Lain</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.buttonGroup}>
-              <TouchableOpacity
-                style={styles.primaryButton}
-                activeOpacity={0.85}
-                onPress={() => router.push("/login")}
-              >
-                <Text style={styles.primaryButtonText}>Masuk / Login</Text>
-              </TouchableOpacity>
+        {/* Action Button: LANJUTKAN */}
+        <View style={styles.bottomSection}>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            activeOpacity={0.85}
+            onPress={handleContinue}
+          >
+            <Text style={styles.primaryButtonText}>LANJUTKAN</Text>
+          </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                activeOpacity={0.85}
-                onPress={() => router.push("/register")}
-              >
-                <Text style={styles.secondaryButtonText}>Daftar Akun Baru</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          <Text style={styles.studentFootnote}>
+            UTS Mobile Programming • Klaudius Oe Naimnou (240444020010)
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -151,132 +70,53 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingHorizontal: 28,
+    paddingVertical: 20,
     justifyContent: "space-between",
   },
-  topBadgeContainer: {
-    alignItems: "center",
-    marginTop: 6,
+  topSpace: {
+    height: 10,
   },
-  badge: {
-    backgroundColor: "#E8F4FD",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#B8DCF9",
-  },
-  badgeText: {
-    color: "#1877F2",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  illustrationWrapper: {
+  illustrationSection: {
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 14,
+    marginVertical: 30,
   },
-  heroImage: {
-    width: 210,
-    height: 180,
+  illustrationImage: {
+    width: 250,
+    height: 220,
   },
   contentSection: {
-    marginBottom: 16,
-  },
-  mainTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#1E293B",
-    textAlign: "center",
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: "#64748B",
-    textAlign: "center",
-    lineHeight: 18,
-    marginBottom: 16,
-    paddingHorizontal: 8,
-  },
-  studentCard: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  studentCardHeader: {
-    flexDirection: "row",
     alignItems: "center",
-  },
-  avatarMini: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#2B92E4",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarMiniText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  studentName: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  studentNim: {
-    fontSize: 12,
-    color: "#64748B",
-  },
-  styleBadge: {
-    backgroundColor: "#2B92E4",
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
   },
-  styleBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "700",
+  headlineTop: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: "#0F172A",
+    textAlign: "center",
+    letterSpacing: 0.5,
   },
-  studentDivider: {
-    height: 1,
-    backgroundColor: "#E2E8F0",
-    marginVertical: 12,
+  headlineBottom: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#0F172A",
+    textAlign: "center",
+    marginTop: 4,
+    marginBottom: 16,
+    letterSpacing: 0.5,
   },
-  metaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  metaLabel: {
-    fontSize: 12,
-    color: "#64748B",
-  },
-  metaValue: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#1E293B",
-  },
-  actionContainer: {
-    marginTop: "auto",
-    paddingTop: 8,
-  },
-  sessionBox: {
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  sessionText: {
+  description: {
     fontSize: 13,
     color: "#475569",
-    marginBottom: 10,
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 20,
+    paddingHorizontal: 12,
   },
-  buttonGroup: {
-    gap: 12,
+  bottomSection: {
+    marginTop: "auto",
+    paddingTop: 20,
   },
   primaryButton: {
     backgroundColor: "#2B92E4",
@@ -294,27 +134,12 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "700",
+    letterSpacing: 0.5,
   },
-  secondaryButton: {
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: "#2B92E4",
-  },
-  secondaryButtonText: {
-    color: "#2B92E4",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  textButton: {
-    paddingVertical: 8,
-  },
-  textButtonLabel: {
-    color: "#64748B",
-    fontSize: 13,
-    fontWeight: "600",
+  studentFootnote: {
+    textAlign: "center",
+    fontSize: 11,
+    color: "#94A3B8",
+    marginTop: 16,
   },
 });
